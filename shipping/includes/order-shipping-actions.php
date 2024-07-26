@@ -16,9 +16,9 @@ if (!class_exists('ESOrderShippingActions')) {
             add_filter( 'manage_edit-shop_order_columns', array($this, 'add_ship_order_column_to_orders_table'));
             add_action( 'manage_shop_order_posts_custom_column', array($this, 'add_ship_now_button_to_orders_table'), 10, 2 );
             add_filter( 'woocommerce_my_account_my_orders_actions', array($this, 'add_tracking_button_user_side'), 10, 2 );
+			
             add_action( 'init', array($this, 'handle_cancel_order_button'));
-			add_action('init', array($this, 'handle_print_label_button'));
-
+			
 			$this->delhiveryAPI = new DelhiveryAPI();
 			$this->shiprocketAPI = new ShiprocketAPI();
 			$this->nimbuspostAPI = new NimbuspostAPI();
@@ -47,6 +47,7 @@ if (!class_exists('ESOrderShippingActions')) {
 			$before_ship_status = ESCommonFunctions::es_wa_simplify_order_status(get_option( 'before_ship_status' ));
 			$after_ship_status = ESCommonFunctions::es_wa_simplify_order_status(get_option( 'after_ship_status' ));
 			$active_couriers = ESCommonFunctions::active_courier_list();
+			$tracking_details = ESCommonFunctions::get_tracking_details($order_ID);
 			if($status === $before_ship_status) {
 				// Check if current column is the actions column
 				if ( $column == 'ship_order' ) {
@@ -61,13 +62,9 @@ if (!class_exists('ESOrderShippingActions')) {
 			} elseif($status === $after_ship_status) {
                 // Check if current column is the actions column
                 if ( $column == 'ship_order' ) {
-					    $button_text = __('Print label', 'textdomain');
-						?>
-						<form action="" method="post" style="display:inline;">
-							<input type="hidden" name="order_id" value="<?php echo esc_attr($order_ID); ?>">
-							<button type="submit" name="print_label" class="button"><?php echo esc_html($button_text); ?></button>
-						</form>
-						<?php
+					$button_text = __('Print label', 'textdomain');
+					echo '<button class="button print-label-button" data-order-id="' . esc_attr($order_ID) . '">' . esc_html($button_text) . '</button>';
+        
                 }
             } elseif($tracking_details['success']){
 				if ( $column == 'ship_order' ) {
@@ -100,56 +97,6 @@ if (!class_exists('ESOrderShippingActions')) {
             }
             return $actions;
         }
-
-
-		public function handle_print_label_button() {
-			if (isset($_POST['print_label'])) {
-				$orderID = sanitize_text_field($_POST['order_id']); //26941, 26933
-				
-				// Get AWB
-				$trackingResponce = ESCommonFunctions::get_tracking_details($orderID);
-				if (!$trackingResponce['success']) {
-					wc_add_notice($trackingResponce['message'], 'error');
-					return;
-				}
-
-				$trackingData = $trackingResponce['result'];
-				$awb = $trackingData['es_awb_no'];
-				$courierName = $trackingData['es_courier_name'];
-
-				switch ($courierName) {
-					case 'delhivery':
-						$result = $this->delhiveryAPI->generateLabel($awb);
-						break;
-					case 'shiprocket':
-						$result = $this->shiprocketAPI->generateLabel($awb);
-						break;
-					case 'nimbuspost':
-						$result = [
-							'success' => false,
-							'message' => 'Cant generate label for Nimbuspost',
-						];
-						break;
-					default:
-						$result = [
-							'success' => false,
-							'message' => 'No Courier Match',
-						];
-				}
-
-				if (!$result['success']) {
-					wc_add_notice($result['message'], 'error');
-					return;
-				}
-
-				$pdfUrl = $result['result'];
-				$url = esc_url($pdfUrl);
-
-				// Redirect to the URL to initiate download
-				wp_redirect($url);
-				exit;
-			}
-		}
 		
         public function handle_cancel_order_button() {
             if ( isset( $_GET['cancel-order-id'] ) ) {

@@ -7,7 +7,7 @@ if (!defined('ABSPATH')) {
 if (!class_exists('ESShippingPopupTemplate')) {
     class ESShippingPopupTemplate {
 		
-		public function template_of_bulk_rate_order_list($order_IDs) {
+		public function template_of_bulk_rate_order_list($order_IDs, $shipBy) {
 			$easyshipLogo = EASYSHIP_URL . 'common/assets/img/easyship.png';
 			$active_couriers = ESCommonFunctions::active_courier_list();
             ?>
@@ -40,8 +40,8 @@ if (!class_exists('ESShippingPopupTemplate')) {
 
 						<div class="eashyship-product-disc">
 							<form id="es_create_bulk_shipment">
-								<?php echo $this->handel_order_table($order_IDs, 'DLB'); ?>
-								<input type="hidden" id="ship_by" name="ship_by" value="DL">
+								<?php echo $this->handel_order_table($order_IDs, $shipBy); ?>
+								<input type="hidden" id="ship_by" name="ship_by" value="<?php echo $shipBy; ?>">
 							</form>
 						</div>
 					</article>
@@ -116,7 +116,7 @@ if (!class_exists('ESShippingPopupTemplate')) {
 								<?php echo $order_weight.'g'; ?>
 							</td>
                             <td>
-                                <?php echo $this->handel_courier_price($order_ID, $order_weight); ?>
+                                <?php echo $this->handel_courier_price($order_ID, $shipBy, $order_weight); ?>
                              </td>
                             <td><?php echo '<span class="eashyship-clickable-icon es-remove-row">&times;</span>' ?></td>
                         </tr>
@@ -133,10 +133,14 @@ if (!class_exists('ESShippingPopupTemplate')) {
             <?php	
         }
 
-        public function handel_courier_price($order_ID,  $order_weight){
-            $shipping_responce = (new DelhiveryAPI)->getShippingRate($order_ID, $order_weight);
-// 			$shipping_responce = (new ShiprocketAPI)->getShippingRate($order_ID, $order_weight);
-// 			$shipping_responce = (new NimbuspostAPI)->getShippingRate($order_ID, $order_weight);
+        public function handel_courier_price($order_ID, $shipBy, $order_weight){
+			if($shipBy == 'shiprocket'){
+				$shipping_responce = (new ShiprocketAPI)->getShippingRate($order_ID, $order_weight);
+			} else if($shipBy == 'delhivery'){
+            	$shipping_responce = (new DelhiveryAPI)->getShippingRate($order_ID, $order_weight);
+			} else if($shipBy == 'nimbuspost'){
+				$shipping_responce = (new NimbuspostAPI)->getShippingRate($order_ID, $order_weight);
+			}
 
 			if($shipping_responce['success']){
 				$list_of_couriers = $shipping_responce['result'];

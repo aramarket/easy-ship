@@ -1,26 +1,69 @@
 jQuery( document ).ready( function( $ ) {
-	// append option list in bulk action in wc order page
-	var $bulkActions = $('select[name="action"], select[name="action2"]');
-    $bulkActions.append('<option value="ship_in_bulk">Ship in Bulk</option>');
+    // append option list in bulk action in wc order page
+    var $bulkActions = $('select[name="action"], select[name="action2"]');
+    $bulkActions.append('<option value="ship_shiprocket">Bulk ship by Shiprocket</option>');
+    $bulkActions.append('<option value="ship_delhivery">Bulk ship by Delhivery</option>');
+    $bulkActions.append('<option value="ship_nimbuspost">Bulk ship by NimbusPost</option>');
+	
+	// this for print label
+	$('.print-label-button').on('click', function(e) {
+		e.preventDefault();
+		var orderId = $(this).attr('data-order-id');
+		var $button = $(this);
 
+		// Create spinner
+		var $spinner = $('<div class="es-spinner"></div>');
+
+		// Replace button with spinner
+		$button.hide().after($spinner);
+		
+		$.ajax({
+			type: 'POST',
+			url: 'admin-ajax.php',
+			data: {
+				action  : 'es_print_label',
+				orderID : orderId,
+			},
+			success: function(response) {
+				// Remove spinner and show button
+				$spinner.remove();
+				$button.show();
+				
+				if (response.success) {
+// 					alert(response.result);               
+					window.location.href = response.result;
+				} else {
+        			alert('Fail - ' + response.message); // Use response.message for fail message
+				}
+			},
+			error: function(response) {
+				// Remove spinner and show button
+				$spinner.remove();
+				$button.show();
+				alert('An unexpected error occurred.');
+			}
+		});
+	});
+	
+	
     // Handle popup of order get rate list 
     $('#doaction, #doaction2, .ship-order-button').on('click', function(e) {
-		
         var selectedOption = $bulkActions.val();
-		var es_option_selected = false;
-		var orders = [];
-		var shipThrough = 'DLB';
-		
- 		 if ($(e.target).hasClass('ship-order-button')) {
-			es_option_selected = true;
-			orders.push($(this).attr('data-order-id'));
-			var shipBy = $(this).attr('ship-by');
-		} else if(selectedOption === 'ship_in_bulk') {
-		   es_option_selected = true;
-			$('input[name="post[]"]:checked').each(function() {
+        var es_option_selected = false;
+        var orders = [];
+        var shipBy;
+        
+        if ($(e.target).hasClass('ship-order-button')) { 
+            es_option_selected = true;
+            orders.push($(this).attr('data-order-id'));
+            shipBy = $(this).attr('ship-by');
+        } else if (selectedOption.startsWith('ship_')) {
+            es_option_selected = true;
+            $('input[name="post[]"]:checked').each(function() {
                 orders.push($(this).val());
             });
-		}
+            shipBy = selectedOption.split('_')[1]; // Get the shipBy value from the selected option
+        }
 		
         if (es_option_selected) {
             e.preventDefault();
@@ -35,7 +78,7 @@ jQuery( document ).ready( function( $ ) {
                     data: {
                         action    : 'es_popup_rate_list',
                         order_ids : orders,
-                        shipBy    : shipThrough,
+                        shipBy    : shipBy,
                     },
                     beforeSend: function() {
                         $('#loader').removeClass('hidden');
@@ -91,7 +134,7 @@ jQuery( document ).ready( function( $ ) {
             data: {
 				action   		: 'es_handel_ship_order',
 				orderData		: orderData,
-				ship_by 		: shipBy,
+				shipBy 		: shipBy,
             },
             beforeSend: function() {
                 $('#loader').removeClass('hidden');

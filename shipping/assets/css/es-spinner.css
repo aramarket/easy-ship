@@ -1,0 +1,17 @@
+
+/* for label pring loading */
+.es-spinner {
+    border: 4px solid rgba(0, 0, 255, 0.1); /* Light blue background */
+    border-left-color: #007bff; /* Blue spinner */
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    animation: es-spin 1s linear infinite;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+@keyframes es-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

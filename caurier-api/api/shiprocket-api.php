@@ -222,9 +222,9 @@ if (!class_exists('ShiprocketAPI')) {
 			$getPaymentMode = ESShippingFunction::check_payment_mode($order->get_payment_method_title());
 
 			if ($getPaymentMode == 'prepaid') {
-				$paymentMode = 1; // 1 for prepaid
+				$paymentMode = 0; // 0 for prepaid
 			} else {
-				$paymentMode = 0; // 0 for cod
+				$paymentMode = 1; // 1 for cod
 			}
 
 			$pickupPostcode = WC()->countries->get_base_postcode();
@@ -308,6 +308,13 @@ if (!class_exists('ShiprocketAPI')) {
 			
 			$productDimensions = ESShippingFunction::get_product_dimensions($orderID);
 
+			$phoneResponce = ESCommonFunctions::extractPhoneNumber($order->get_billing_phone());
+			if($phoneResponce['success']) {
+				$phone = $phoneResponce['result'];
+			} else{
+				$phone = 0000000000;
+			}
+			
 			$itemData 			= $this->prepareOrderItemsData($orderID);
 
 			$orderData = array(
@@ -325,7 +332,7 @@ if (!class_exists('ShiprocketAPI')) {
 							"billing_state" 			=> $order->get_billing_state(),
 							"billing_country" 			=> "India",
 							"billing_email" 			=> $order->get_billing_email(),
-							"billing_phone" 			=> $order->get_billing_phone(),
+							"billing_phone" 			=> $phone,
 							"shipping_is_billing" 		=> true,
 							"shipping_customer_name" 	=> "",
 							"shipping_last_name" 		=> "",

@@ -3,7 +3,7 @@
  * Plugin Name:       EasyShip
  * Plugin URI:        https://easy-ship.in
  * Description:       Most Affordable tracking and Shipping solution Spacial for India, Also Made in India.
- * Version:           2.0.0
+ * Version:           2.0.1
  * Requires at least: 5.2
  * Requires PHP:      7.2
  * Author:            AKASH
